@@ -1,0 +1,33 @@
+#Uploading last backup to Yandex Disk via WebDAV
+
+Remove-Variable * -ErrorAction SilentlyContinue; Remove-Module *; $error.Clear(); Clear-Host
+$pathToYandexDisk = "Z:\"
+$pathToBackups = "D:\Backup\"
+
+try
+{    
+       
+        if (-Not([System.IO.Directory]::Exists($pathToYandexDisk)))
+        {
+            Write-Host "Mounting Yandex Disk"
+            net use Z: "https://webdav.yandex.ru/backup/" /User:!!!USERNAME!!!@yandex.ru !!!PASSWORD!!!
+        }
+        
+        Start-Sleep -s 2
+        
+        if([System.IO.Directory]::Exists($pathToYandexDisk))
+        {
+            Get-ChildItem -Path $pathToBackups -Filter "*.7z" | Sort-Object LastAccessTime -Descending | Select-Object -First 1 | % {
+                $pathToLastBackup = "$pathToBackups\$_"
+                $pathToYandexDiskBackup = "$pathToYandexDisk\$_"
+                Write-Host "Uploading : $pathToLastBackup -> $pathToYandexDiskBackup"
+                [System.IO.File]::Copy($pathToLastBackup,$pathToYandexDiskBackup)
+                Write-Host "Done : $pathToLastBackup -> Yandex.Disk"
+                net use Z: /delete 
+            }
+        }
+}
+catch
+{
+    net use Z: /delete
+}
